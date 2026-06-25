@@ -1,7 +1,23 @@
 import { useState } from 'react';
 import { Map, Sparkles, Clock, BookOpen, Layers, Award, Terminal } from 'lucide-react';
 
-type TrackId = 'software' | 'cyber' | 'data' | 'uiux' | 'pm' | 'marketing' | 'writing';
+type TrackId =
+  | 'software'
+  | 'cyber'
+  | 'data'
+  | 'uiux'
+  | 'pm'
+  | 'marketing'
+  | 'writing'
+  | 'fullstack'
+  | 'aiml'
+  | 'devops'
+  | 'mobile'
+  | 'ba'
+  | 'vlsi'
+  | 'finance'
+  | 'civilservices'
+  | 'consulting';
 
 interface RoadmapTrack {
   title: string;
@@ -182,11 +198,240 @@ const TRACKS: Record<TrackId, RoadmapTrack> = {
       'Explaining how you outline complex technical features for non-technical users',
       'Describing your editing process'
     ]
+  },
+  fullstack: {
+    title: 'Full-Stack Developer (MERN/Java)',
+    timeline: '5–7 Months',
+    skills: ['HTML5 & CSS3', 'JavaScript & ES6+', 'React.js & TailwindCSS', 'Node.js & Express', 'MongoDB & Mongoose', 'Java & Spring Boot', 'REST APIs & Postman'],
+    courses: [
+      'MERN Stack Web Development Bootcamp',
+      'Java Enterprise Application Development with Spring Boot',
+      'Relational Databases and SQL Foundations'
+    ],
+    projects: [
+      'Student Marketplace Platform (React, Express, MongoDB with JWT auth)',
+      'Task Management Dashboard (Spring Boot backend + React frontend)',
+      'Personal Portfolio Website with responsive design'
+    ],
+    certs: [
+      'Meta Full-Stack Developer Professional Certificate',
+      'Oracle Certified Associate: Java SE Programmer'
+    ],
+    interviewPrep: [
+      'Coding challenge practice: building nested lists, handling API states',
+      'System design: design a URL shortener, REST vs GraphQL comparisons',
+      'SQL queries: write complex JOINs and aggregations'
+    ]
+  },
+  aiml: {
+    title: 'AI & Machine Learning Engineer',
+    timeline: '8–12 Months',
+    skills: ['Python Programming', 'Linear Algebra & Calculus', 'Pandas & NumPy', 'Scikit-Learn (Supervised/Unsupervised)', 'Deep Learning (PyTorch/TensorFlow)', 'Natural Language Processing (NLP)', 'LLMs & Prompt Engineering'],
+    courses: [
+      'Mathematics for Machine Learning',
+      'Deep Learning Specialization by DeepLearning.AI',
+      'Applied Machine Learning & NLP Applications'
+    ],
+    projects: [
+      'Predictive Price Evaluator for Real Estate (Scikit-Learn regression)',
+      'Fine-tuned LLM Chatbot (HuggingFace transformers + Gradio interface)',
+      'Object Recognition Scanner (OpenCV + PyTorch CNN models)'
+    ],
+    certs: [
+      'TensorFlow Developer Certificate',
+      'AWS Certified Machine Learning - Specialty'
+    ],
+    interviewPrep: [
+      'Mathematics check: explaining gradient descent, backpropagation, and bias-variance',
+      'ML design: design a recommendation engine for an e-commerce app',
+      'Python coding: vector operations, custom NumPy implementations'
+    ]
+  },
+  devops: {
+    title: 'DevOps & Cloud Engineer',
+    timeline: '6–9 Months',
+    skills: ['Linux Commands & Shell Scripting', 'Docker Containers', 'Kubernetes Orchestration', 'CI/CD Pipelines (GitHub Actions/Jenkins)', 'Terraform (Infrastructure as Code)', 'AWS / Azure Cloud services', 'Monitoring (Prometheus & Grafana)'],
+    courses: [
+      'Linux Administration and Automation Basics',
+      'AWS Certified Solutions Architect Course',
+      'Kubernetes Mastery: Setup, Config, and Scaling'
+    ],
+    projects: [
+      'Automated CI/CD Pipeline (Build, test, and deploy React app to AWS S3)',
+      'Multi-container Microservices Deployment (Kubernetes with Ingress)',
+      'Infrastructure Automation (Provision VPC and EC2 nodes using Terraform)'
+    ],
+    certs: [
+      'AWS Certified Solutions Architect - Associate',
+      'Certified Kubernetes Administrator (CKA)',
+      'HashiCorp Certified: Terraform Associate'
+    ],
+    interviewPrep: [
+      'Linux shell operations, file permissions, process monitoring',
+      'Troubleshooting Kubernetes pod failures (CrashLoopBackOff, Pending)',
+      'Explaining 3-tier architecture deployment strategies (Blue-Green, Canary)'
+    ]
+  },
+  mobile: {
+    title: 'Mobile App Developer (Flutter/Android)',
+    timeline: '4–7 Months',
+    skills: ['Dart & Flutter framework', 'Java & Kotlin', 'Android SDK & Lifecycle', 'iOS App Store Deployment', 'State Management (Provider/Bloc/Riverpod)', 'Local Storage (Hive/SQLite)', 'Firebase Integration'],
+    courses: [
+      'Flutter & Dart - The Complete Guide',
+      'Modern Android App Development with Kotlin',
+      'Mobile UX Guidelines & App Store Deployment'
+    ],
+    projects: [
+      'Expense Tracker App (Flutter with local Hive persistence & charting)',
+      'Social Media Newsfeed App (Kotlin with Firebase backend)',
+      'Location-based Food Delivery App (Flutter + Google Maps API integration)'
+    ],
+    certs: [
+      'Google Associate Android Developer',
+      'Meta Android Developer Professional Certificate'
+    ],
+    interviewPrep: [
+      'Mobile architecture: MVC, MVP, MVVM patterns',
+      'Explaining Android Activity/Fragment lifecycles',
+      'Flutter state management comparisons and performance optimization'
+    ]
+  },
+  ba: {
+    title: 'Business Analyst',
+    timeline: '4–6 Months',
+    skills: ['Advanced Microsoft Excel', 'SQL Queries & Joins', 'Tableau / PowerBI dashboards', 'Agile / Scrum methodology', 'Jira / Confluence documentation', 'Requirements Engineering (BRD/FRD)', 'Stakeholder Management'],
+    courses: [
+      'Business Analysis Foundations & BRD Writing',
+      'SQL for Data & Business Analysis',
+      'Data Visualization with Tableau'
+    ],
+    projects: [
+      'Business Requirements Document (BRD) for an online banking portal',
+      'Sales Performance Dashboard (Interactive Tableau report)',
+      'Sprint Planning Case Study (Managing stories in Jira)'
+    ],
+    certs: [
+      'Entry Certificate in Business Analysis (ECBA - IIBA)',
+      'Certified ScrumMaster (CSM)'
+    ],
+    interviewPrep: [
+      'Writing user stories and defining clear Acceptance Criteria',
+      'Answering business estimation guesstimates (e.g. market sizing)',
+      'Resolving conflicts between business stakeholders and tech developers'
+    ]
+  },
+  vlsi: {
+    title: 'VLSI & Embedded Systems Engineer',
+    timeline: '8–12 Months',
+    skills: ['C & C++ Programming', 'Verilog / SystemVerilog', 'Digital Design & Computer Architecture', 'Embedded C & RTOS', 'FPGA Prototyping', 'Circuit Simulation (SPICE)', 'Microcontroller interfaces (I2C, SPI, UART)'],
+    courses: [
+      'Introduction to Verilog HDL and FPGA Design',
+      'Embedded Systems Programming on ARM Cortex',
+      'Digital System Design & Logic Synthesis'
+    ],
+    projects: [
+      '16-bit ALU Processor Core (Implemented and simulated in Verilog)',
+      'Real-time Weather Station (Embedded C on Arduino/STM32 + SPI sensor)',
+      'Traffic Light Controller State Machine (FSM in SystemVerilog)'
+    ],
+    certs: [
+      'Post Graduate Diploma in VLSI Design',
+      'Embedded Systems Certification (from CDAC or NIELIT)'
+    ],
+    interviewPrep: [
+      'Solving logic gate problems, K-maps, state table reductions',
+      'Explaining Setup and Hold time violations in flip-flops',
+      'C coding: pointer manipulation, bitwise operations for hardware register settings'
+    ]
+  },
+  finance: {
+    title: 'Chartered Accountant & Finance Analyst',
+    timeline: '12–24 Months',
+    skills: ['Financial Accounting & Analysis', 'Indian Taxation Laws (GST/Income Tax)', 'Corporate Law & Auditing Standards', 'Financial Modeling (Excel)', 'Valuation Methodologies (DCF, Multiples)', 'Risk Management'],
+    courses: [
+      'ICAI CA Intermediate / Final Curriculum',
+      'Financial Modeling & Valuation Analyst (FMVA)',
+      'Corporate Finance & Cost Accounting Fundamentals'
+    ],
+    projects: [
+      'Discounted Cash Flow (DCF) Valuation model for an Indian listed firm',
+      'Comprehensive tax audit case study for a mid-sized enterprise',
+      'Corporate mergers & acquisitions financial valuation report'
+    ],
+    certs: [
+      'Chartered Accountant (CA - ICAI India)',
+      'Chartered Financial Analyst (CFA - Level 1/2)'
+    ],
+    interviewPrep: [
+      'Explaining accounting standards (Ind AS / IFRS) differences',
+      'Answering corporate valuation scenarios and cost of capital (WACC) calculations',
+      'Walkthrough of tax deduction rules under the Indian Income Tax Act'
+    ]
+  },
+  civilservices: {
+    title: 'Civil Services (UPSC IAS Track)',
+    timeline: '12–18 Months',
+    skills: ['Indian Polity & Constitution', 'Ancient, Medieval, and Modern Indian History', 'Geography & Environmental Science', 'Indian Economy & Policy', 'Current Affairs & General Studies', 'Essay Writing & CSAT aptitude', 'Public Administration / Optional Subject'],
+    courses: [
+      'UPSC General Studies Integrated Course (Prelims + Mains)',
+      'CSAT Quantitative Aptitude & Reading Comprehension',
+      'UPSC Mains Answer Writing & Feedback Workshops'
+    ],
+    projects: [
+      'Weekly policy review briefings (Analyzing government schemes like PM-Kisan, Ayushman Bharat)',
+      'Optional subject syllabus completion (e.g., Public Administration, Sociology)',
+      'Mock interview panel simulations & personality feedback sheets'
+    ],
+    certs: [
+      'UPSC Civil Services Prelims Qualifying Record',
+      'Public Policy/Governance Certificate courses (optional)'
+    ],
+    interviewPrep: [
+      'Daily mock interviews focusing on personality, current issues, and candidate background (DAF)',
+      'Drafting concise, balanced answers to socio-economic challenges',
+      'Explaining district-level administrative strategies for crisis management'
+    ]
+  },
+  consulting: {
+    title: 'Management Consultant',
+    timeline: '6–8 Months',
+    skills: ['Structured Problem Solving (MECE)', 'Case Study Analysis', 'Guesstimate Estimations', 'Financial Statements Interpretation', 'Microsoft PowerPoint (Client Decks)', 'Market Entry & Growth Frameworks', 'Communication & Pitching'],
+    courses: [
+      'Case Interview Prep (Victor Cheng/LOMS techniques)',
+      'Consulting Frameworks: Profitability, Market Entry, M&A',
+      'Strategic Management & Competitive Positioning'
+    ],
+    projects: [
+      'Market Entry Strategy Report (Launching a foreign EV brand in India)',
+      'Profitability improvement analysis for a struggling Indian logistics company',
+      'Comprehensive pitch deck recommending expansion of digital health infrastructure'
+    ],
+    certs: [
+      'Strategic Management Certificate (e.g. from IIMs or online)'
+    ],
+    interviewPrep: [
+      'Live case interview solving (Profitability trees, market sizing)',
+      'Answering market estimation guesstimates (e.g. "Number of flight takeoffs in Mumbai")',
+      'Behavioral Fit interviews: leadership, impact stories, and client handling'
+    ]
   }
 };
 
 export default function CareerRoadmap() {
-  const [selectedTrack, setSelectedTrack] = useState<TrackId>('software');
+  const [selectedTrack, setSelectedTrack] = useState<TrackId>(() => {
+    const cached = localStorage.getItem('studentproof_profile');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.interest) {
+          return parsed.interest as TrackId;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return 'software';
+  });
   const track = TRACKS[selectedTrack];
 
   return (

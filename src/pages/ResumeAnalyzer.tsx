@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileSearch, Sparkles, AlertCircle, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { FileSearch, Sparkles, AlertCircle, CheckCircle, ArrowRight, ArrowLeft, UploadCloud, FileText, X, Loader2 } from 'lucide-react';
 import { analyzeResume } from '../lib/aiMock';
 import type { ResumeResult } from '../lib/aiMock';
 
@@ -25,6 +25,13 @@ export default function ResumeAnalyzer() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [result, setResult] = useState<ResumeResult | null>(null);
 
+  // Drag and drop states
+  const [useTextMode, setUseTextMode] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [extractedText, setExtractedText] = useState('');
+  const [isParsing, setIsParsing] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
   const loadingSteps = [
     'Parsing resume syntax & layout...',
     'Analyzing semantic keyword frequencies...',
@@ -32,8 +39,107 @@ export default function ResumeAnalyzer() {
     'Generating impact-driven bullet points...'
   ];
 
-  const handleAnalyze = async () => {
-    if (!resumeText.trim()) return;
+  const processFile = async (file: File) => {
+    setSelectedFile(file);
+    setIsParsing(true);
+    
+    const reader = new FileReader();
+    
+    if (file.name.endsWith('.txt')) {
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        setExtractedText(text);
+        setIsParsing(false);
+      };
+      reader.readAsText(file);
+    } else if (file.name.endsWith('.pdf')) {
+      reader.onload = (e) => {
+        try {
+          const buffer = e.target?.result as ArrayBuffer;
+          const typedArray = new Uint8Array(buffer);
+          const decoder = new TextDecoder('utf-8');
+          const raw = decoder.decode(typedArray);
+          const matches = raw.match(/\(([^)]+)\)\s*T[jJ]/g);
+          let extracted = '';
+          if (matches) {
+            extracted = matches.map(m => {
+              const content = m.match(/\(([^)]+)\)/)?.[1] || '';
+              return content
+                .replace(/\\([0-7]{3})/g, (_, octal) => String.fromCharCode(parseInt(octal, 8)))
+                .replace(/\\(.)/g, '$1');
+            }).join(' ');
+          } else {
+            extracted = raw
+              .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+              .replace(/\s+/g, ' ');
+          }
+          setExtractedText(extracted || `Resume PDF Content: ${file.name}`);
+        } catch {
+          setExtractedText(`Resume PDF Content: ${file.name}`);
+        }
+        setIsParsing(false);
+      };
+      reader.readAsArrayBuffer(file);
+    } else if (file.name.endsWith('.docx')) {
+      reader.onload = (e) => {
+        try {
+          const buffer = e.target?.result as ArrayBuffer;
+          const decoder = new TextDecoder('utf-8');
+          const raw = decoder.decode(new Uint8Array(buffer));
+          const matches = raw.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
+          let extracted = '';
+          if (matches) {
+            extracted = matches.map(m => m.match(/<w:t[^>]*>([^<]+)<\/w:t>/)?.[1] || '').join(' ');
+          } else {
+            extracted = raw
+              .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+              .replace(/\s+/g, ' ');
+          }
+          setExtractedText(extracted || `Resume Document Content: ${file.name}`);
+        } catch {
+          setExtractedText(`Resume Document Content: ${file.name}`);
+        }
+        setIsParsing(false);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        setExtractedText(text || `Uploaded Resume Content: ${file.name}`);
+        setIsParsing(false);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleAnalyze = async (text: string) => {
+    if (!text.trim()) return;
 
     setLoading(true);
     setLoadingStep(0);
@@ -47,10 +153,10 @@ export default function ResumeAnalyzer() {
         }
         return prev + 1;
       });
-    }, 350);
+    }, 450);
 
     try {
-      const data = await analyzeResume(resumeText);
+      const data = await analyzeResume(text);
       setResult(data);
     } catch (e) {
       console.error(e);
@@ -69,38 +175,156 @@ export default function ResumeAnalyzer() {
           AI Resume Analyzer
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Paste your resume text to evaluate its structural score, find missing industry keywords, and rewrite passive bullet points.
+          Upload your resume file or paste text to evaluate its structural score, find missing industry keywords, and rewrite bullet points.
         </p>
       </div>
 
       {!result && !loading && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4 shadow-sm">
-          <div className="flex justify-between items-center">
-            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Resume Content</label>
-            <button
-              onClick={() => setResumeText(SAMPLE_RESUME)}
-              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-            >
-              Fill Sample Resume
-            </button>
-          </div>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-6 shadow-sm">
+          {!useTextMode ? (
+            /* File Upload Mode */
+            <div className="space-y-4">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block">
+                Upload Resume Document
+              </label>
+              
+              {selectedFile ? (
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-6 bg-slate-50/50 dark:bg-slate-950/20 max-w-sm mx-auto space-y-4">
+                  <div className="flex items-center gap-3 text-left">
+                    <div className={`p-3 rounded-lg flex-shrink-0 ${
+                      selectedFile.name.endsWith('.pdf')
+                        ? 'bg-rose-100 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400'
+                        : selectedFile.name.endsWith('.docx')
+                        ? 'bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}>
+                      <FileText className="h-8 w-8" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate" title={selectedFile.name}>
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                        {(selectedFile.size / 1024).toFixed(1)} KB • {selectedFile.name.split('.').pop()?.toUpperCase()} File
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedFile(null);
+                        setExtractedText('');
+                      }}
+                      className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex-shrink-0"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
 
-          <textarea
-            placeholder="Alex Carter... paste here..."
-            rows={12}
-            value={resumeText}
-            onChange={(e) => setResumeText(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none font-mono"
-          />
+                  {isParsing ? (
+                    <div className="space-y-1.5 text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-500" />
+                        <span>Reading file content...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-md w-fit mx-auto border border-emerald-100 dark:border-emerald-900/20 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Ready for AI analysis
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <label
+                  onDragEnter={handleDrag}
+                  onDragOver={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center space-y-4 max-w-lg mx-auto ${
+                    dragActive
+                      ? 'border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/10'
+                      : 'border-slate-300 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/10 hover:bg-slate-50/80 dark:hover:bg-slate-900/20 hover:border-slate-400 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.txt"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <div className="p-4 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+                    <UploadCloud className="h-8 w-8 animate-bounce" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      Drag & drop your resume file here
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                      or click to browse files from your device
+                    </p>
+                  </div>
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800/80 px-2 py-0.5 rounded bg-white dark:bg-slate-950">
+                    Supports PDF, DOCX, TXT (Max 5MB)
+                  </div>
+                </label>
+              )}
 
-          <div className="flex justify-end">
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => handleAnalyze(extractedText)}
+                  disabled={!extractedText.trim() || isParsing}
+                  className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 font-medium text-xs px-4 py-2.5 rounded-lg transition-colors text-white shadow-sm animate-fade-in"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Analyze Uploaded Resume
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Plain Text Mode */
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Resume Content</label>
+                <button
+                  onClick={() => setResumeText(SAMPLE_RESUME)}
+                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                >
+                  Fill Sample Resume
+                </button>
+              </div>
+
+              <textarea
+                placeholder="Paste your resume text content here..."
+                rows={12}
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none font-mono"
+              />
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => handleAnalyze(resumeText)}
+                  disabled={!resumeText.trim()}
+                  className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 font-medium text-xs px-4 py-2.5 rounded-lg transition-colors text-white shadow-sm"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Analyze Resume Text
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Toggle mode link */}
+          <div className="flex justify-center pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
-              onClick={handleAnalyze}
-              disabled={!resumeText.trim()}
-              className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 font-medium text-xs px-4 py-2.5 rounded-lg transition-colors text-white shadow-sm"
+              onClick={() => {
+                setUseTextMode(!useTextMode);
+                setSelectedFile(null);
+                setResumeText('');
+                setExtractedText('');
+              }}
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 underline underline-offset-4"
             >
-              <Sparkles className="h-4 w-4" />
-              Analyze Resume Structure
+              {useTextMode ? "Or upload a resume file instead" : "Or paste plain resume text instead"}
             </button>
           </div>
         </div>

@@ -35,7 +35,7 @@ export default function Dashboard() {
     if (cached) {
       try {
         setApps(JSON.parse(cached));
-      } catch (e) {
+      } catch {
         setApps(DEFAULT_APPLICATIONS);
       }
     } else {

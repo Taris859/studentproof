@@ -160,7 +160,7 @@ Output only the JSON code block. Do not add conversational intro/outro text.`;
   try {
     const content = await queryLLM(resumeText, systemPrompt);
     return extractJson(content) as ResumeResult;
-  } catch (e) {
+  } catch {
     // Offline Mock Fallback
     console.warn("Using Offline Mock Fallback for Resume Analyzer.");
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -233,7 +233,7 @@ Payment Requested: ${params.paymentRequested}`;
   try {
     const content = await queryLLM(inputPrompt, systemPrompt);
     return extractJson(content) as InternshipReport;
-  } catch (e) {
+  } catch {
     // Offline Mock Fallback
     console.warn("Using Offline Mock Fallback for Internship Checker.");
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -294,7 +294,7 @@ Tone: ${params.tone}`;
   try {
     const content = await queryLLM(inputPrompt, systemPrompt);
     return extractJson(content) as ApplicationMaterials;
-  } catch (e) {
+  } catch {
     // Offline Mock Fallback
     console.warn("Using Offline Mock Fallback for Application Generator.");
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -326,7 +326,7 @@ Output only the JSON.`;
   try {
     const content = await queryLLM(answerText, systemPrompt);
     return extractJson(content) as InterviewFeedback;
-  } catch (e) {
+  } catch {
     // Offline Mock Fallback
     console.warn("Using Offline Mock Fallback for Interview Coach.");
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -368,7 +368,7 @@ Output only the JSON.`;
   try {
     const content = await queryLLM(notesText, systemPrompt);
     return extractJson(content) as PresentationReport;
-  } catch (e) {
+  } catch {
     // Offline Mock Fallback
     console.warn("Using Offline Mock Fallback for Presentation Analyzer.");
     await new Promise((resolve) => setTimeout(resolve, 850));
@@ -388,40 +388,241 @@ Output only the JSON.`;
   }
 }
 
+function getDynamicAssignmentMock(inputText: string): AssignmentExplanation {
+  const text = inputText.toLowerCase();
+  
+  // 1. Database / SQL / Normalization
+  if (text.includes('database') || text.includes('sql') || text.includes('normalize') || text.includes('relation') || text.includes('3nf') || text.includes('schema')) {
+    return {
+      summary: 'This assignment focuses on relational database management systems (RDBMS) and the principles of database normalization. Normalization is the systematic process of organizing fields and tables of a database to minimize redundancy and dependency. The primary goal is to isolate data so that additions, deletions, and modifications of a field can be made in just one table and then propagated through the rest of the database using defined foreign keys. This prevents data anomalies (insert, update, and delete anomalies) and ensures relational integrity.',
+      presentationPoints: [
+        'Introduction to RDBMS and the problem of data redundancy in flat-file tables.',
+        'Analyzing Functional Dependencies (FDs) to determine how attributes relate to one another.',
+        'First Normal Form (1NF): Eliminating duplicate columns and ensuring atomicity of values.',
+        'Second Normal Form (2NF): Removing partial dependencies where non-prime attributes depend on only part of a composite candidate key.',
+        'Third Normal Form (3NF): Eliminating transitive dependencies where non-prime attributes depend on other non-prime attributes.',
+        'Reviewing the final normalized schema design and showing entity-relationship (ER) linkages.'
+      ],
+      vivaQuestions: [
+        {
+          question: 'What is the primary difference between 2NF and 3NF?',
+          answer: 'A relation is in 2NF if it is in 1NF and contains no partial dependencies (no non-prime attribute depends on a proper subset of any candidate key). A relation is in 3NF if it is in 2NF and contains no transitive dependencies (non-prime attributes must only depend directly on the primary key, not on other non-prime attributes).'
+        },
+        {
+          question: 'What are database anomalies and why are they dangerous?',
+          answer: 'There are three types: Insertion anomaly (inability to add data without other unrelated data), Deletion anomaly (unintended loss of data when deleting unrelated records), and Update anomaly (inconsistent data state when updating a value that exists in multiple redundant rows). They cause data corruption and inconsistency.'
+        },
+        {
+          question: 'What is a transitive dependency?',
+          answer: 'It is an indirect functional dependency. If attribute A determines B (A -> B) and B determines C (B -> C), then A determines C transitively through B. In 3NF, such transitive relationships are moved to separate tables.'
+        },
+        {
+          question: 'When would you deliberately denormalize a database?',
+          answer: 'Denormalization is done for performance optimization in read-heavy applications (like data warehousing or analytics). By re-introducing controlled redundancy, we avoid expensive JOIN operations, speeding up complex query execution times at the cost of additional storage and write complexity.'
+        }
+      ],
+      importantTopics: [
+        'Functional Dependencies & Candidate Keys',
+        'Lossless-Join and Dependency-Preserving Decompositions',
+        'Boyce-Codd Normal Form (BCNF) vs 3NF',
+        'Entity-Relationship Diagrams (ERDs) and Foreign Keys'
+      ]
+    };
+  }
+
+  // 2. Data Structures & Algorithms (DSA) / Sorting / Search / Tree / Graph
+  if (text.includes('algorithm') || text.includes('dsa') || text.includes('sorting') || text.includes('search') || text.includes('tree') || text.includes('graph') || text.includes('binary') || text.includes('complexity') || text.includes('leetcode')) {
+    return {
+      summary: 'This assignment covers core computer science principles in Data Structures and Algorithms (DSA). It focuses on choosing the optimal memory layout (data structure) and computational steps (algorithm) to solve a specific problem efficiently. Key objectives include analyzing time and space complexity using Big O notation to evaluate how scale affects performance, and implementing robust search, sorting, or traversal routines.',
+      presentationPoints: [
+        'Problem definition and identifying why basic approaches (like brute force) fail under large datasets.',
+        'Choosing the right data structure (e.g., hash maps for O(1) lookups, trees for hierarchical search, or graphs for network paths).',
+        'Step-by-step walkthrough of the algorithm logic (traversal steps, partition logic, or recursion stack).',
+        'Complexity analysis demonstrating Big O time and space performance bounds.',
+        'Edge cases evaluated: empty inputs, duplicate elements, negative numbers, or integer overflows.',
+        'Alternative algorithms compared (e.g., QuickSort vs MergeSort, or BFS vs DFS).'
+      ],
+      vivaQuestions: [
+        {
+          question: 'What is Big O notation and how do you calculate time complexity?',
+          answer: 'Big O notation describes the upper bound of an algorithm\'s running time in the worst-case scenario relative to the input size N. It is calculated by identifying the dominant operations, counting how many times they execute in terms of N, and dropping lower-order terms and constant coefficients.'
+        },
+        {
+          question: 'What is the difference between Depth-First Search (DFS) and Breadth-First Search (BFS)?',
+          answer: 'DFS explores as deep as possible along each branch before backtracking, utilizing a Stack (or recursion). BFS explores all neighbors at the current depth before moving to the next level, utilizing a Queue. DFS is ideal for pathfinding and backtracking, while BFS guarantees finding the shortest path in unweighted graphs.'
+        },
+        {
+          question: 'What is the time complexity of QuickSort in the average and worst cases?',
+          answer: 'QuickSort has an average-case time complexity of O(N log N) when the pivot divides the array reasonably well. In the worst-case (e.g., array already sorted and picking the first/last element as pivot), the partitioning is highly unbalanced, resulting in O(N^2) complexity. Randomized pivot selection helps guarantee O(N log N) behavior.'
+        },
+        {
+          question: 'Why is a Hash Map look-up generally O(1) time complexity?',
+          answer: 'A hash map uses a hash function to map keys to specific index buckets in an array. Under ideal conditions with a good hash function, the key maps directly to its value bucket instantly. In cases of hash collisions (multiple keys mapping to the same bucket), chaining or open addressing is used, which can degrade look-up time to O(N) if collisions are high.'
+        }
+      ],
+      importantTopics: [
+        'Time & Space Complexity (Big O, Big Theta, Big Omega)',
+        'Recursion & Dynamic Programming (Memoization vs Tabulation)',
+        'Tree Traversals (In-order, Pre-order, Post-order, Level-order)',
+        'Graph Representation (Adjacency Matrix vs Adjacency List)'
+      ]
+    };
+  }
+
+  // 3. Programming / Code / Python / Java / C++ / Javascript / Object-Oriented (OOP)
+  if (text.includes('programming') || text.includes('code') || text.includes('python') || text.includes('java') || text.includes('javascript') || text.includes('class') || text.includes('object') || text.includes('oop') || text.includes('function')) {
+    return {
+      summary: 'This assignment targets programming fundamentals, software architecture, and the paradigm of Object-Oriented Programming (OOP) or Functional Programming. It emphasizes writing clean, reusable, and modular code that adheres to standard software engineering practices (like DRY and SOLID principles). The task involves designing system classes, handling data encapsulation, and implementing logic handlers.',
+      presentationPoints: [
+        'Overview of the software design requirements and architecture goals.',
+        'Defining classes, objects, and relationships to model real-world concepts.',
+        'Encapsulating private states and exposing controlled public interfaces.',
+        'Implementing inheritance and polymorphism to reuse logic and customize subclass behaviors.',
+        'Writing modular helper functions and separating controller logic from data models.',
+        'Testing strategy: unit testing, assertion statements, and exception handling blocks.'
+      ],
+      vivaQuestions: [
+        {
+          question: 'What are the four pillars of Object-Oriented Programming?',
+          answer: 'The four pillars are: 1) Encapsulation (hiding internal state and requiring all interaction through public methods), 2) Inheritance (creating a new class based on an existing one to reuse properties/methods), 3) Polymorphism (allowing different classes to respond to the same method call in their own way), and 4) Abstraction (hiding implementation details and showing only essential features).'
+        },
+        {
+          question: 'What is the difference between a class and an object?',
+          answer: 'A class is a blueprint, template, or prototype that defines the variables and methods common to all objects of that type. An object is a concrete instance of a class that occupies memory and possesses state values and behavior.'
+        },
+        {
+          question: 'What is polymorphism and can you give a real example?',
+          answer: 'Polymorphism is the ability of an object to take on many forms. A common example is method overriding: if we have a parent class `Animal` with a method `makeSound()`, and subclasses `Dog` and `Cat` that override `makeSound()` to bark or meow, calling `makeSound()` on an `Animal` reference will execute the subclass-specific sound at runtime.'
+        },
+        {
+          question: 'What is the purpose of interface-based design?',
+          answer: 'Interfaces define a contract of methods that a class must implement without specifying how they are implemented. This decouples the definition of behavior from its implementation, allowing developers to write flexible, pluggable code where different classes can be swapped seamlessly as long as they adhere to the interface contract.'
+        }
+      ],
+      importantTopics: [
+        'Object-Oriented Design & Class Relationships (Association, Composition)',
+        'SOLID Design Principles for Clean Code',
+        'Memory Management (Stack vs Heap, Garbage Collection)',
+        'Exception Handling & Resource Management (Try-Catch-Finally)'
+      ]
+    };
+  }
+
+  // 4. Web Development / HTML / CSS / React / Frontend / Backend
+  if (text.includes('web') || text.includes('html') || text.includes('css') || text.includes('react') || text.includes('frontend') || text.includes('backend') || text.includes('api') || text.includes('http') || text.includes('server')) {
+    return {
+      summary: 'This assignment covers full-stack web development concepts, including client-side user interface construction (Frontend) and server-side logic management (Backend). The core challenge is building a responsive application that communicates via the HTTP protocol, queries database objects, and renders data dynamically to provide an intuitive user experience.',
+      presentationPoints: [
+        'System architecture outlining client-server structure and HTTP requests.',
+        'Creating semantic HTML markup layouts and styling with CSS responsive queries.',
+        'State management in frontend frameworks (like React components and hooks).',
+        'Backend server setup, routing requests, and processing parameters.',
+        'Designing RESTful API endpoints and returning structured JSON payloads.',
+        'Security configurations (CORS headers, data validation, and input sanitization).'
+      ],
+      vivaQuestions: [
+        {
+          question: 'What is React Virtual DOM and how does it optimize rendering?',
+          answer: 'The Virtual DOM is a lightweight in-memory representation of the real DOM. When component state changes, React updates the Virtual DOM first. It then compares this updated Virtual DOM with a snapshot of the previous one (a process called "diffing") and computes the minimum set of changes required to update the real browser DOM (a process called "reconciliation"). This prevents expensive full-page reflows.'
+        },
+        {
+          question: 'What is CORS and why do browsers enforce it?',
+          answer: 'CORS stands for Cross-Origin Resource Sharing. It is a security mechanism enforced by web browsers to restrict cross-origin HTTP requests. By default, scripts on a page can only fetch resources from the same origin (domain, protocol, and port). A server must explicitly send headers (like `Access-Control-Allow-Origin`) to allow requests from other origins, preventing malicious sites from reading sensitive session data.'
+        },
+        {
+          question: 'What is the difference between GET and POST requests?',
+          answer: 'GET requests are used to retrieve data from a server, with parameters appended directly in the URL query string. They should be idempotent and safe (causing no side effects). POST requests are used to submit data to a server to create/update resources, with parameters sent inside the request body. POST requests are not cached and have no length restrictions.'
+        },
+        {
+          question: 'What are React Hooks and why were they introduced?',
+          answer: 'Hooks are functions that let you use state and other React features (like lifecycle methods) in functional components without writing class components. They were introduced in React 16.8 to make it easier to share stateful logic between components, simplify code structures, and avoid issues associated with classes (like binding `this`).'
+        }
+      ],
+      importantTopics: [
+        'Client-Server Architecture & HTTP Status Codes',
+        'State Management and Component Lifecycle',
+        'RESTful API Conventions & HTTP Verbs',
+        'Web Security Baselines (CORS, XSS, CSRF)'
+      ]
+    };
+  }
+
+  // 5. General / Default Fallback
+  const extractedSubject = inputText.split('\n')[0]?.replace(/subject:|topic:|title:/i, '').trim() || 'General Coursework';
+  const keywordList = inputText.match(/\b[A-Za-z-]{4,15}\b/g)?.filter(w => !['this', 'that', 'with', 'from', 'have', 'your', 'about', 'assignment', 'tasks', 'questions', 'explain'].includes(w.toLowerCase())).slice(0, 5) || ['Conceptual Analysis', 'Core Principles'];
+
+  return {
+    summary: `This assignment deals with advanced academic concepts relating to "${extractedSubject}". The primary objective is to analyze the requested scenario, understand the constraints, and formulate a structured solution. The solution requires applying theoretical frameworks to practical problems, ensuring high-quality reasoning and systematic derivation of conclusions. Key themes in this topic involve: ${keywordList.join(', ')}.`,
+    presentationPoints: [
+      `Introduction to the core topic of "${extractedSubject}" and its real-world importance.`,
+      `Parsing the specific constraints and requirements specified in the prompt.`,
+      `Formulating a step-by-step conceptual methodology to address each sub-task.`,
+      `Deep dive into the core theoretical concepts (specifically looking at: ${keywordList.slice(0, 3).join(', ')}).`,
+      `Presenting the results, diagrams, or calculations clearly.`,
+      `Reviewing limitations, alternative approaches, and future expansion areas.`
+    ],
+    vivaQuestions: [
+      {
+        question: `What is the core theoretical principle behind this "${extractedSubject}" assignment?`,
+        answer: `The core principle involves applying structured, methodical principles to parse complex inputs, reduce redundancies, and satisfy defined domain rules. This ensures that the resulting output (whether code, a database schema, or an analysis report) is mathematically sound, consistent, and follows industry standard best practices.`
+      },
+      {
+        question: `How would you verify or test the correctness of your solution to these tasks?`,
+        answer: `Correctness is verified by comparing the outcomes against established boundary conditions and validation rules. For mathematical or logical tasks, this involves formal proofs or tracing steps. For software tasks, it involves running test suites, verifying input constraints, and analyzing runtime outputs.`
+      },
+      {
+        question: `What were the main constraints or assumptions you made when solving this?`,
+        answer: `The primary assumption was that all input data provided in the prompt was clean and accurate. We assumed standard defaults for any unspecified variables (e.g., standard networking protocols, regular normal form attributes, or standard OOP design patterns) to keep the solution clean and focused.`
+      },
+      {
+        question: `How does mastering the topic of "${extractedSubject}" contribute to real-world engineering or scientific applications?`,
+        answer: `Mastering this topic builds the critical analytical thinking required to break down large, ambiguous problem statements into modular, solvable components. In a professional engineering environment, this translates directly to writing maintainable code, designing scalable system architectures, or conducting rigorous validation of requirements before deployment.`
+      }
+    ],
+    importantTopics: [
+      `Foundational Concepts of ${extractedSubject}`,
+      `Methodical Problem-Solving Frameworks`,
+      `Critical Evaluation & Constraints Analysis`,
+      `Quality Assurance and Validation Procedures`
+    ]
+  };
+}
+
 // 6. Assignment Explainer
 export async function explainAssignment(assignmentText: string): Promise<AssignmentExplanation> {
-  const systemPrompt = `You are a university teaching assistant. Explain the college assignment questions and supply conceptual outlines, viva prep, and core subjects to master. Respond in a valid JSON object matching the following structure:
+  const systemPrompt = `You are a university teaching assistant. Provide a highly detailed and comprehensive explanation of the college assignment questions. Supply a thorough conceptual summary (at least 2-3 paragraphs, at least 150 words total), detailed slide presentation points (at least 5-6 points), exactly 4 detailed oral exam (viva) prep questions with comprehensive explanations (each explanation must be at least 2-3 sentences), and at least 4 core subjects to master. Respond in a valid JSON object matching the following structure:
 {
-  "summary": "Relational normal forms concepts...", // string
-  "presentationPoints": ["Explain normalization anomalies"], // string[]
-  "vivaQuestions": [{ "question": "What is 3NF?", "answer": "Resolves transitive FDs" }],
-  "importantTopics": ["Functional Dependencies"] // string[]
+  "summary": "A deep and comprehensive multi-paragraph conceptual summary of the assignment, detail-rich and academic...",
+  "presentationPoints": [
+    "Introduction to the core topic and primary concepts",
+    "Detailed analytical slide point covering core theory",
+    "Step-by-step methodology and implementation layout",
+    "Key calculations, algorithms, or schema rules applied",
+    "Evaluation of edge cases and performance limitations",
+    "Review of critical conclusions and recommendations"
+  ],
+  "vivaQuestions": [
+    { "question": "What is the primary architectural concept here?", "answer": "The primary architecture relies on... explaining in multiple detailed sentences." },
+    { "question": "Explain the major trade-offs in this design.", "answer": "The design choices present key trade-offs between... explaining in multiple detailed sentences." },
+    { "question": "How would you handle scale in this model?", "answer": "To scale this structure, one would introduce... explaining in multiple detailed sentences." },
+    { "question": "How do you test and validate this solution?", "answer": "Validation is carried out by executing... explaining in multiple detailed sentences." }
+  ],
+  "importantTopics": [
+    "Core Concept 1",
+    "Core Concept 2",
+    "Core Concept 3",
+    "Core Concept 4"
+  ]
 }
-Output only the JSON.`;
+Output only the JSON code block. Do not add conversational intro/outro text.`;
 
   try {
     const content = await queryLLM(assignmentText, systemPrompt);
     return extractJson(content) as AssignmentExplanation;
-  } catch (e) {
+  } catch {
     // Offline Mock Fallback
     console.warn("Using Offline Mock Fallback for Assignment Explainer.");
     await new Promise((resolve) => setTimeout(resolve, 800));
-
-    return {
-      summary: 'This assignment targets relational database normalization. The objective is to identify and resolve redundancies (like repeating instructor names) and anomalies up to 3NF.',
-      presentationPoints: [
-        'The Problem: Duplication in student course files.',
-        '3NF Solution: Splitting signup columns into distinct normalized tables.'
-      ],
-      vivaQuestions: [
-        {
-          question: 'What is transitive dependency and how does it relate to 3NF?',
-          answer: 'A transitive dependency occurs when a non-key attribute determines another non-key attribute. 3NF resolves this by moving the dependent attributes into a separate table.'
-        }
-      ],
-      importantTopics: [
-        'First, Second, and Third Normal Forms (1NF, 2NF, 3NF).'
-      ]
-    };
+    return getDynamicAssignmentMock(assignmentText);
   }
 }

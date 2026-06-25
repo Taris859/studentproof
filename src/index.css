@@ -1,4 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-primary: #4f46e5;
@@ -19,7 +22,7 @@
     @apply bg-slate-50 text-slate-900 transition-colors duration-200;
   }
   
-  .dark html, .dark body {
+  html.dark, html.dark body {
     @apply bg-slate-950 text-slate-100;
   }
   

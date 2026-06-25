@@ -19,6 +19,7 @@ import PresentationAnalyzer from './pages/PresentationAnalyzer';
 import AssignmentExplainer from './pages/AssignmentExplainer';
 import CareerRoadmap from './pages/CareerRoadmap';
 import ApplicationTracker from './pages/ApplicationTracker';
+import Profile from './pages/Profile';
 
 // Scroll to top helper
 function ScrollToTop() {
@@ -160,6 +161,14 @@ export default function App() {
           element={
             <SidebarLayout darkMode={darkMode} setDarkMode={setDarkMode}>
               <ApplicationTracker />
+            </SidebarLayout>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <SidebarLayout darkMode={darkMode} setDarkMode={setDarkMode}>
+              <Profile />
             </SidebarLayout>
           }
         />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -20,7 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 
 interface SidebarLayoutProps {
@@ -34,6 +35,65 @@ export default function SidebarLayout({ children, darkMode, setDarkMode }: Sideb
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
+  const [profile, setProfile] = useState({
+    name: 'New Student',
+    avatar: '',
+    isPremium: false
+  });
+
+  useEffect(() => {
+    const loadProfile = () => {
+      const cached = localStorage.getItem('studentproof_profile');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setProfile({
+            name: parsed.name || 'New Student',
+            avatar: parsed.avatar || '',
+            isPremium: !!parsed.isPremium
+          });
+        } catch {
+          // ignore
+        }
+      } else {
+        setProfile({
+          name: 'New Student',
+          avatar: '',
+          isPremium: false
+        });
+      }
+    };
+
+    loadProfile();
+    window.addEventListener('storage', loadProfile);
+    return () => {
+      window.removeEventListener('storage', loadProfile);
+    };
+  }, []);
+
+  const renderAvatar = (sizeClass: string, textClass: string = "text-xs") => {
+    if (profile.avatar && profile.avatar.startsWith('http')) {
+      return (
+        <img
+          className={`${sizeClass} rounded-full object-cover border border-indigo-500/20`}
+          src={profile.avatar}
+          alt="Student Avatar"
+        />
+      );
+    }
+    const initials = profile.name
+      .split(' ')
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2) || '?';
+    return (
+      <div className={`${sizeClass} rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold uppercase ${textClass} border border-indigo-500/20`}>
+        {initials}
+      </div>
+    );
+  };
+
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Resume Analyzer', href: '/resume-analyzer', icon: FileSearch },
@@ -44,6 +104,7 @@ export default function SidebarLayout({ children, darkMode, setDarkMode }: Sideb
     { name: 'Assignment Explainer', href: '/assignment-explainer', icon: BookOpen },
     { name: 'Career Roadmap', href: '/career-roadmap', icon: Map },
     { name: 'Application Tracker', href: '/application-tracker', icon: Kanban },
+    { name: 'Profile Settings', href: '/profile', icon: User },
     { name: 'Pricing Plans', href: '/pricing', icon: CreditCard },
     { name: 'About StudentProof', href: '/about', icon: Info },
   ];
@@ -101,18 +162,16 @@ export default function SidebarLayout({ children, darkMode, setDarkMode }: Sideb
           <div className="bg-slate-800/50 border border-slate-800 rounded-lg p-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img
-                  className="h-9 w-9 rounded-full bg-slate-700"
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100"
-                  alt="Student Avatar"
-                />
+                {renderAvatar("h-9 w-9", "text-xs")}
                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white truncate">Alex Carter</p>
+                <p className="text-sm font-semibold text-white truncate">{profile.name}</p>
                 <div className="flex items-center gap-1">
                   <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                  <p className="text-xs text-slate-400 truncate">Premium Student</p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {profile.isPremium ? 'Premium Student' : 'Free Plan'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -191,13 +250,9 @@ export default function SidebarLayout({ children, darkMode, setDarkMode }: Sideb
             {/* Quick Profile Icon indicator */}
             <div className="flex items-center gap-2">
               <span className="hidden sm:inline-block text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Alex Carter
+                {profile.name}
               </span>
-              <img
-                className="h-8 w-8 rounded-full border border-indigo-500/20"
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100"
-                alt="Student Avatar"
-              />
+              {renderAvatar("h-8 w-8", "text-[10px]")}
             </div>
           </div>
         </header>

@@ -19,6 +19,13 @@ const COLUMNS: { id: Application['status']; label: string; color: string }[] = [
   { id: 'Selected', label: 'Selected', color: 'border-t-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/10' }
 ];
 
+const DEFAULT_APPLICATIONS: Application[] = [
+  { id: '1', company: 'Google', role: 'Software Engineering Intern', deadline: '2026-07-15', notes: 'Need to prepare for DSA round.', status: 'Interview' },
+  { id: '2', company: 'Stripe', role: 'Frontend Developer Intern', deadline: '2026-07-20', notes: 'Submitted resume. Followed up on LinkedIn.', status: 'Applied' },
+  { id: '3', company: 'Linear', role: 'Product Design Intern', deadline: '2026-08-01', notes: 'Portfolio under review.', status: 'Interested' },
+  { id: '4', company: 'Vercel', role: 'Developer Relations Intern', deadline: '2026-06-30', notes: 'Got short-listed for video intro.', status: 'Shortlisted' }
+];
+
 export default function ApplicationTracker() {
   const [apps, setApps] = useState<Application[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,9 +44,12 @@ export default function ApplicationTracker() {
     if (cached) {
       try {
         setApps(JSON.parse(cached));
-      } catch (e) {
-        // use empty list if parse error
+      } catch {
+        setApps(DEFAULT_APPLICATIONS);
       }
+    } else {
+      localStorage.setItem('studentproof_applications', JSON.stringify(DEFAULT_APPLICATIONS));
+      setApps(DEFAULT_APPLICATIONS);
     }
   }, []);
 

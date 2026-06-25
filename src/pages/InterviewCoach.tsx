@@ -1,22 +1,48 @@
-import { useState } from 'react';
-import { Mic, Sparkles, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mic, Sparkles, AlertCircle, CheckCircle, ArrowLeft, Lock, Play, CircleDot, Volume2, ArrowRight, RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { analyzeInterviewAnswer } from '../lib/aiMock';
 import type { InterviewFeedback } from '../lib/aiMock';
 
 const SAMPLE_ANSWER = "I worked on a school project where we had to write code in python. It was kind of hard because some team members didn't do much, so I had to do a lot of the work myself. Eventually we finished it and got a decent grade, I guess.";
 
-const MOCK_QUESTIONS = [
-  { id: 1, text: "Tell me about yourself and your background.", category: "Introduction" },
-  { id: 2, text: "Describe a time you had to resolve a conflict within a team.", category: "Behavioral" },
-  { id: 3, text: "Why are you interested in this internship role?", category: "Motivation" },
-  { id: 4, text: "Explain a complex technical project you built recently.", category: "Technical" },
-  { id: 5, text: "How do you prioritize tasks when working under tight deadlines?", category: "Behavioral" },
-  { id: 6, text: "Tell me about a time you failed and what you learned from it.", category: "Behavioral" },
-  { id: 7, text: "What is your experience working with Version Control (Git)?", category: "Technical" },
-  { id: 8, text: "How do you handle feedback or criticism from a supervisor?", category: "Behavioral" },
-  { id: 9, text: "What do you know about our company's mission or products?", category: "Motivation" },
-  { id: 10, text: "Where do you see yourself professionally in the next three years?", category: "Introduction" }
-];
+const CAREER_QUESTIONS: Record<string, string[]> = {
+  software: [
+    "Tell me about a complex coding project you built recently and the tech stack you selected.",
+    "How do you optimize a slow database query or explain the time complexity of your search routine?",
+    "Describe a time you had to resolve a Git merge conflict or coordinate tasks in an engineering team."
+  ],
+  aiml: [
+    "How do you handle overfitting in a deep learning model, and what regularizations do you prefer?",
+    "Explain the primary difference between gradient descent and backpropagation in neural networks.",
+    "What specific metrics would you choose to evaluate a fraud-detection model's performance and why?"
+  ],
+  civilservices: [
+    "How would you address a sudden public health crisis or resource deficit in a rural sub-division?",
+    "Explain the key principles of the separation of powers under the Indian Constitution and its checks.",
+    "How do you balance rapid industrial expansion with mandatory environmental conservation guidelines?"
+  ],
+  finance: [
+    "Explain the key differences between cash flow statements and corporate profit & loss sheets.",
+    "How would you conduct a Discounted Cash Flow (DCF) valuation of an Indian listed enterprise?",
+    "How do GST tax filings and compliance operate for a digital e-commerce firm in India?"
+  ],
+  vlsi: [
+    "Explain setup and hold time violations in digital circuits and how to remediate them.",
+    "How do you configure a SPI or I2C serial interface to communicate with a 16-bit microcontroller?",
+    "Explain the difference between blocking and non-blocking assignments in Verilog hardware modeling."
+  ],
+  devops: [
+    "How do you troubleshoot a Kubernetes pod that is stuck in a CrashLoopBackOff state?",
+    "Explain your strategy for automating infrastructure deployments using Terraform configurations.",
+    "What metrics would you monitor in Prometheus to verify the health of a microservice API cluster?"
+  ],
+  general: [
+    "Tell me about yourself, your background, and why you are interested in this specific career path.",
+    "Describe a major academic or project obstacle you faced and the methodology you used to overcome it.",
+    "How do you manage tight deadlines and prioritize competing tasks when working on team deliveries?"
+  ]
+};
 
 export default function InterviewCoach() {
   const [activeMode, setActiveMode] = useState<'analyzer' | 'mock'>('analyzer');
@@ -24,10 +50,55 @@ export default function InterviewCoach() {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<InterviewFeedback | null>(null);
 
-  // Mock state for selected question in Mock Interview Mode
-  const [selectedQuestionId, setSelectedQuestionId] = useState<number>(1);
-  const [mockResponseText, setMockResponseText] = useState('');
-  const [mockFeedback, setMockFeedback] = useState<string | null>(null);
+  // Profile data state
+  const [profile, setProfile] = useState({
+    name: 'Alex Carter',
+    interest: 'software',
+    isPremium: false
+  });
+
+  // Mock Interview State Machine
+  const [interviewState, setInterviewState] = useState<'idle' | 'speaking' | 'answering' | 'evaluating' | 'feedback' | 'completed'>('idle');
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [voiceText, setVoiceText] = useState('');
+  const [scores, setScores] = useState({ clarity: 0, confidence: 0, professionalism: 0 });
+  const [feedbackNotes, setFeedbackNotes] = useState<string>('');
+  const [betterPhrase, setBetterPhrase] = useState<string>('');
+  const [mockMistakes, setMockMistakes] = useState<string[]>([]);
+  const [overallReport, setOverallReport] = useState<{ score: number; verdict: string } | null>(null);
+
+  useEffect(() => {
+    const loadProfile = () => {
+      const cached = localStorage.getItem('studentproof_profile');
+      const isPremiumPurchased = localStorage.getItem('studentproof_is_premium') === 'true';
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setProfile({
+            name: parsed.name || 'Alex Carter',
+            interest: parsed.interest || 'software',
+            isPremium: isPremiumPurchased || !!parsed.isPremium
+          });
+        } catch {
+          // ignore
+        }
+      } else {
+        setProfile({
+          name: 'Alex Carter',
+          interest: 'software',
+          isPremium: isPremiumPurchased
+        });
+      }
+    };
+    loadProfile();
+    window.addEventListener('storage', loadProfile);
+    return () => {
+      window.removeEventListener('storage', loadProfile);
+    };
+  }, []);
+
+  const questionsList = CAREER_QUESTIONS[profile.interest] || CAREER_QUESTIONS.general;
+  const currentQuestionText = questionsList[questionIndex];
 
   const handleAnalyzeAnswer = async (textToAnalyze: string) => {
     if (!textToAnalyze.trim()) return;
@@ -43,16 +114,67 @@ export default function InterviewCoach() {
     }
   };
 
-  const handleMockSubmit = () => {
-    if (!mockResponseText.trim()) return;
-    setLoading(true);
-    setMockFeedback(null);
-    setTimeout(() => {
-      setMockFeedback(
-        `Good start! Your answer targets the core scenario. Tip: Try to quantify the results. If you solved a conflict or launched a tool, explain the specific outcomes (e.g. 'boosted engagement by 20%'). Keep practicing!`
-      );
-      setLoading(false);
-    }, 1000);
+  // State actions for AI mock
+  const startInterview = () => {
+    setQuestionIndex(0);
+    setVoiceText('');
+    setOverallReport(null);
+    setInterviewState('speaking');
+  };
+
+  const handleFinishSpeaking = () => {
+    setInterviewState('answering');
+  };
+
+  const submitAnswer = async () => {
+    if (!voiceText.trim()) return;
+    setInterviewState('evaluating');
+
+    try {
+      const data = await analyzeInterviewAnswer(voiceText);
+      
+      // Accumulate scores for average in the end
+      setScores(prev => ({
+        clarity: prev.clarity + data.clarity,
+        confidence: prev.confidence + data.confidence,
+        professionalism: prev.professionalism + data.professionalism
+      }));
+
+      setFeedbackNotes(data.suggestions.join('. ') || 'Keep working on structuring with the STAR framework.');
+      setBetterPhrase(data.betterVersion);
+      setMockMistakes(data.mistakes);
+      setInterviewState('feedback');
+    } catch {
+      setFeedbackNotes('Good draft. Focus on structural metrics.');
+      setBetterPhrase('In my last project, we deployed database indexes, improving speed by 30%.');
+      setMockMistakes(['Missing quantitative metrics']);
+      setInterviewState('feedback');
+    }
+  };
+
+  const nextQuestion = () => {
+    if (questionIndex < questionsList.length - 1) {
+      setQuestionIndex(prev => prev + 1);
+      setVoiceText('');
+      setInterviewState('speaking');
+    } else {
+      // Calculate average final scores
+      const count = questionsList.length;
+      const avgClarity = Math.round(scores.clarity / count);
+      const avgConfidence = Math.round(scores.confidence / count);
+      const avgProf = Math.round(scores.professionalism / count);
+      const finalScore = Math.round((avgClarity + avgConfidence + avgProf) / 3);
+
+      let verdict = 'Good placement readiness. Focus on detailing system limits.';
+      if (finalScore >= 80) verdict = 'Excellent readiness! Highly articulate and structure-perfect.';
+      else if (finalScore < 60) verdict = 'Requires preparation. practice structuring responses using action verbs.';
+
+      setOverallReport({
+        score: finalScore,
+        verdict
+      });
+      setInterviewState('completed');
+    }
   };
 
   return (
@@ -87,8 +209,7 @@ export default function InterviewCoach() {
         <button
           onClick={() => {
             setActiveMode('mock');
-            setMockFeedback(null);
-            setMockResponseText('');
+            setInterviewState('idle');
           }}
           className={`pb-2.5 px-4 font-display font-bold text-sm border-b-2 transition-all ${
             activeMode === 'mock'
@@ -234,100 +355,257 @@ export default function InterviewCoach() {
 
       {/* Mode 2: Mock Interview Mode */}
       {activeMode === 'mock' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Questions Navigation */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase px-3 block pb-2">Questions Deck</span>
-            {MOCK_QUESTIONS.map((q) => (
-              <button
-                key={q.id}
-                onClick={() => {
-                  setSelectedQuestionId(q.id);
-                  setMockResponseText('');
-                  setMockFeedback(null);
-                }}
-                className={`w-full text-left px-3 py-2.5 text-xs font-semibold rounded-lg transition-all flex items-start justify-between gap-2 ${
-                  selectedQuestionId === q.id
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                }`}
-              >
-                <span className="line-clamp-1">{q.text}</span>
-                <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wide flex-shrink-0 font-bold ${
-                  selectedQuestionId === q.id
-                    ? 'bg-indigo-500 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                }`}>
-                  {q.category}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Question Practice Panel */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Selected Question #{selectedQuestionId}</span>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-relaxed">
-                "{MOCK_QUESTIONS.find((q) => q.id === selectedQuestionId)?.text}"
-              </h3>
-
-              <div className="pt-2 space-y-2">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">Type your practice response:</label>
-                <textarea
-                  placeholder="Draft your answer here... try to mention a challenge, your action, and the result."
-                  rows={5}
-                  value={mockResponseText}
-                  onChange={(e) => setMockResponseText(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none font-sans"
-                />
+        <div className="max-w-3xl mx-auto">
+          {/* Locked State if not Premium */}
+          {!profile.isPremium ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center space-y-6 shadow-md max-w-xl mx-auto">
+              <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900/30">
+                <Lock className="h-7 w-7" />
               </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setMockResponseText('');
-                    setMockFeedback(null);
-                  }}
-                  className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors border border-transparent"
+              <div className="space-y-2">
+                <h3 className="text-lg font-display font-bold text-slate-900 dark:text-white">🔒 Interactive AI Voice Mock Interview</h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  Practice talking with Priya, our conversational AI recruiter. She will conduct the interview, analyze your audio drafts, and ask dynamic follow-up questions tailored to your profile.
+                </p>
+              </div>
+              
+              <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
+                <Link
+                  to="/pricing"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-5 py-3 rounded-lg transition-all shadow-sm"
                 >
-                  Reset
-                </button>
-                <button
-                  onClick={handleMockSubmit}
-                  disabled={!mockResponseText.trim() || loading}
-                  className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 font-medium text-xs px-4 py-2 rounded-lg transition-colors text-white shadow-sm"
+                  Upgrade to Premium
+                </Link>
+                <Link
+                  to="/profile"
+                  className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs px-5 py-3 rounded-lg transition-all"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  Evaluate Prep Response
-                </button>
+                  Unlock in Profile Settings (Demo)
+                </Link>
               </div>
             </div>
-
-            {/* Simulated Loading inside Question panel */}
-            {loading && (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-xl text-center shadow-sm space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto" />
-                <p className="text-xs text-slate-400">Scoring performance...</p>
+          ) : (
+            /* Premium Call Dashboard */
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden min-h-[450px] flex flex-col">
+              
+              {/* Call Header */}
+              <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">AI Screen Call Active</span>
+                </div>
+                <div className="text-xs text-slate-400">
+                  Target: <span className="font-semibold text-indigo-400 uppercase">{profile.interest}</span>
+                </div>
               </div>
-            )}
 
-            {/* Answer feedback panel */}
-            {mockFeedback && !loading && (
-              <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-500/10 rounded-xl p-5 shadow-sm space-y-3">
-                <h4 className="font-bold text-indigo-950 dark:text-indigo-400 text-sm flex items-center gap-1.5">
-                  <CheckCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                  Practice Feedback Summary
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
-                  {mockFeedback}
-                </p>
-                <span className="text-[10px] text-slate-400 block pt-1 border-t border-indigo-500/5">
-                  Practice mode keeps track of drafts using Local Cache. Click another question to reset.
-                </span>
+              {/* Core Call Interface Area */}
+              <div className="flex-1 p-6 flex flex-col justify-center items-center space-y-6">
+                
+                {/* 1. IDLE STATE */}
+                {interviewState === 'idle' && (
+                  <div className="text-center space-y-6 max-w-sm">
+                    <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full bg-indigo-500/10 border border-indigo-500/20" />
+                      <img
+                        className="w-24 h-24 rounded-full border-2 border-indigo-500/40 relative z-10"
+                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200"
+                        alt="Interviewer Face"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-display font-bold text-base text-slate-900 dark:text-white">Priya — Technical Recruiter</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Hi {profile.name}, I will be conducting your 3-question placement screening loop today.</p>
+                    </div>
+                    <button
+                      onClick={startInterview}
+                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-5 py-3 rounded-lg transition-all shadow-md shadow-indigo-600/10"
+                    >
+                      <Play className="h-4 w-4" /> Start Interview Loop
+                    </button>
+                  </div>
+                )}
+
+                {/* 2. SPEAKING STATE */}
+                {interviewState === 'speaking' && (
+                  <div className="text-center space-y-6 max-w-md w-full">
+                    {/* Pulsating Wave Avatar */}
+                    <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
+                      <div className="absolute -inset-2 rounded-full bg-indigo-500/15 animate-pulse" />
+                      <img
+                        className="w-24 h-24 rounded-full border-2 border-indigo-500 relative z-10"
+                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200"
+                        alt="Interviewer Face"
+                      />
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
+                      <div className="flex justify-center items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider mb-2">
+                        <Volume2 className="h-4 w-4" /> Priya is speaking...
+                      </div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-relaxed italic">
+                        "{currentQuestionText}"
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleFinishSpeaking}
+                      className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all shadow-sm"
+                    >
+                      <Mic className="h-4 w-4" /> Unmute to Respond
+                    </button>
+                  </div>
+                )}
+
+                {/* 3. ANSWERING STATE */}
+                {interviewState === 'answering' && (
+                  <div className="w-full max-w-md space-y-5">
+                    <div className="text-center space-y-3">
+                      <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+                        <div className="absolute inset-0 rounded-full bg-emerald-500/10 border border-emerald-500/20" />
+                        <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center relative z-10">
+                          <Mic className="h-7 w-7 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase">
+                        <CircleDot className="h-3.5 w-3.5 animate-ping text-red-500" /> Recording Response...
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">Speak / Type your response:</label>
+                      <textarea
+                        placeholder="State your answer. Frame it around Situation, Task, Action, and specific metrics (Result)..."
+                        rows={4}
+                        value={voiceText}
+                        onChange={(e) => setVoiceText(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none font-sans"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setInterviewState('speaking')}
+                        className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs py-2.5 rounded-lg transition-colors"
+                      >
+                        Listen Again
+                      </button>
+                      <button
+                        onClick={submitAnswer}
+                        disabled={!voiceText.trim()}
+                        className="flex-1 inline-flex justify-center items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 font-semibold text-xs py-2.5 rounded-lg transition-colors text-white shadow-sm"
+                      >
+                        Submit Response
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. EVALUATING STATE */}
+                {interviewState === 'evaluating' && (
+                  <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto" />
+                    <h4 className="font-bold text-slate-800 dark:text-white text-sm">Priya is evaluating your phrasing structure...</h4>
+                    <p className="text-xs text-slate-400">Comparing details with standard STAR requirements...</p>
+                  </div>
+                )}
+
+                {/* 5. FEEDBACK STATE */}
+                {interviewState === 'feedback' && (
+                  <div className="w-full max-w-lg space-y-5">
+                    <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-slate-200">
+                        <img
+                          src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=80&h=80"
+                          alt="Interviewer Face"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Priya's Feedback (Question #{questionIndex + 1})</h4>
+                        <p className="text-[10px] text-slate-400">Response analyzed in real-time</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Key Suggestions */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Coaching Tip</span>
+                        <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-lg border border-slate-100 dark:border-slate-850 leading-relaxed font-sans font-medium">
+                          {feedbackNotes}
+                        </p>
+                      </div>
+
+                      {/* Mistakes */}
+                      {mockMistakes.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider block">Areas to avoid</span>
+                          <div className="flex flex-wrap gap-2">
+                            {mockMistakes.map((mistake, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 text-[10px] bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded border border-red-100 dark:border-red-900/20">
+                                <AlertCircle className="h-3 w-3" />
+                                {mistake}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Better Phrasing */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider block">Optimized Phrasing Suggestion</span>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-100 dark:border-slate-900 leading-relaxed font-mono italic">
+                          "{betterPhrase}"
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={nextQuestion}
+                      className="w-full inline-flex justify-center items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 rounded-lg transition-colors shadow-sm"
+                    >
+                      {questionIndex < questionsList.length - 1 ? 'Proceed to Next Question' : 'Complete Interview & View Grades'}
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* 6. COMPLETED STATE */}
+                {interviewState === 'completed' && overallReport && (
+                  <div className="w-full max-w-md space-y-6 text-center py-4">
+                    <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-100 dark:border-emerald-900/30">
+                      <CheckCircle className="h-8 w-8" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-display font-bold text-slate-900 dark:text-white">Mock Interview Loop Finished</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                        You completed the 3 screening questions for target career role: <strong className="uppercase text-indigo-600 dark:text-indigo-400">{profile.interest}</strong>.
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-950/50 p-5 border border-slate-100 dark:border-slate-850 rounded-xl space-y-3">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Overall Placement Readiness Grade</span>
+                        <div className="text-4xl font-display font-black text-indigo-600 dark:text-indigo-400 mt-1">
+                          {overallReport.score}%
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-650 dark:text-slate-350 leading-relaxed font-sans">
+                        {overallReport.verdict}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={startInterview}
+                      className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-5 py-3 rounded-lg transition-colors shadow-sm"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" /> Restart Placement Mock
+                    </button>
+                  </div>
+                )}
+
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
